@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 #define ROUND_MAX_SIZE 2
-#define N 2 // N <= 4 
+#define N 4 // N <= 4 
 #define MAX_bit 4 * N
 
 // s-box
@@ -15,8 +15,7 @@ const unsigned short invsBox4[] = { 0x5,0xe,0xf,0x8,0xC,0x1,0x2,0xD,0xB,0x4,0x6,
 typedef uint16_t u16;
 typedef int16_t s16;
 
-void ps(u16* state)
-{
+void ps(u16* state) {
 	printf("%x\n", state[0]);
 	return;
 }
@@ -67,8 +66,7 @@ u16 pLayerConversion(u16 in, int operation) {
 	return out;
 }
 
-void Encrypt(u16* state, u16* aKey)
-{
+void Encrypt(u16* state, u16* aKey) {
 
 	// counter
 	u16 round = 1;
@@ -91,8 +89,7 @@ void Encrypt(u16* state, u16* aKey)
 	key[1] = aKey[1];
 	key[0] = aKey[0];
 
-	for (round = 1; round < ROUND_MAX_SIZE; round++)
-	{
+	for (round = 1; round < ROUND_MAX_SIZE; round++) {
 		//	addRoundkey
 		state[0] ^= key[1];
 
@@ -101,8 +98,9 @@ void Encrypt(u16* state, u16* aKey)
 		
 		// pLayer
 		state[0] = pLayerConversion(state[0], 0);
-		//	-------------------* Key Scheduling -------------------***
-				// <<61 ==(rot)== >>19	
+
+		//	Key Scheduling
+		// <<61 ==(rot)== >>19	
 		temp_0 = key[0];
 		temp_1 = key[1];
 
@@ -129,18 +127,15 @@ void Encrypt(u16* state, u16* aKey)
 		//Permutation
 		if (round & 0x01)key[0] ^= 0x8000;
 		key[1] ^= (round >> 1);
-		//	-------------------* Key Scheduling End-------------------***
 	}
-	//	------------------- addRoundkey -------------------*******
+	// addRoundkey
 	state[0] ^= key[1];
 
-	//	------------------- addRoundkey End -------------------***
 	return;
 }
 
 
-void Decrypt(u16* state, u16* aKey)
-{
+void Decrypt(u16* state, u16* aKey) {
 	// counter
 	u16 round;
 	// Variables Key Scheduling
@@ -162,8 +157,7 @@ void Decrypt(u16* state, u16* aKey)
 	key[0] = aKey[0];
 
 	//	------------------- Key Scheduling -------------------
-	for (round = 1; round < 32; round++)
-	{
+	for (round = 1; round < 32; round++) {
 		// <<61 ==(rot)== >>19	
 		temp_0 = key[0];
 		temp_1 = key[1];
@@ -198,23 +192,18 @@ void Decrypt(u16* state, u16* aKey)
 		subkey[round - 1][0] = key[1];
 	}
 
-	//	------------------- Key Scheduling End -------------------
-
-	for (round = ROUND_MAX_SIZE - 1; round > 0; round--)
-	{
-		//	addRoundkey
+	for (round = ROUND_MAX_SIZE - 1; round > 0; round--) {
+		// addRoundkey
 		state[0] ^= subkey[round - 1][0];
 		
-		//	pLayer
+		// pLayer
 		state[0] = pLayerConversion(state[0], 1);
 
-		//	sBox
+		// sBox
 		state[0] = SboxConversion(state[0], 1);
 	}
-	//	------------------- addRoundkey -------------------
+	// addRoundkey 
 	state[0] ^= aKey[1];
-
-	//	------------------- addRoundkey End -------------------
 }
 
 
