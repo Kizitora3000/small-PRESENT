@@ -1,0 +1,241 @@
+#include <stdio.h>
+#include <stdint.h>
+
+#define ROUND_MAX_SIZE 32
+#define N 4 // N <= 4 
+#define MAX_bit 4 * N
+
+// s-box
+const unsigned short sBox4[] = { 0xc,0x5,0x6,0xb,0x9,0x0,0xa,0xd,0x3,0xe,0xf,0x8,0x4,0x7,0x1,0x2 };
+const unsigned short decBox3[] = { 0x0000,0x2000,0x4000,0x6000,0x8000,0xa000,0xc000,0xe000 };
+const unsigned short invsBox4[] = { 0x5,0xe,0xf,0x8,0xC,0x1,0x2,0xD,0xB,0x4,0x6,0x3,0x0,0x7,0x9,0xA };
+
+
+typedef uint16_t u16;
+typedef int16_t s16;
+
+void ps(u16* state)
+{
+	printf("%x ", state[3]);
+	printf("%x ", state[2]);
+	printf("%x ", state[1]);
+	printf("%x\n\n", state[0]);
+	return;
+}
+
+void Encrypt(u16* state, u16* aKey)
+{
+
+	// counter
+	u16 round = 1;
+	u16 temp;
+	// Variables Key Scheduling
+
+	// Variables pLayer
+	u16 temp_0;
+	u16 temp_1;
+	u16 temp_2;
+	u16 temp_3;
+	u16 j = 1;
+	s16 position;
+	s16 reste;
+	u16 key[5];
+
+	key[4] = aKey[4];
+	key[3] = aKey[3];
+	key[2] = aKey[2];
+	key[1] = aKey[1];
+	key[0] = aKey[0];
+	for (round = 1; round < ROUND_MAX_SIZE; round++)
+	{
+		//	****************** addRoundkey *************************
+		state[0] ^= key[1];
+		//	****************** addRoundkey End *********************
+		//	******************* sBox *******************************
+		int u = 0;
+		int x = 0;
+		int v = state[0];
+		for (int i = 0; i < MAX_bit; ++i) {
+			u |= (v & 1) << (i % 4);
+			v >>= 1;
+
+			if ((i + 1) % 4 == 0) {
+				x |= sBox4[u] << (i + 1 - 4);
+				u = 0;
+			}
+		}
+		//	******************* sBox End ***************************
+		//	******************* pLayer *****************************
+		int r = 0;
+		for (int i = 0; i < MAX_bit; ++i) {
+			if (i == MAX_bit - 1) {
+				r ^= (x >> ((MAX_bit - 1) - i)) & 1;
+			}
+			else {
+				int pos = N * i % (MAX_bit - 1);
+				r ^= ((x >> ((MAX_bit - 1) - i)) & 1) << ((MAX_bit - 1) - pos);
+			}
+		}
+		state[0] = r;
+		//	******************* pLayer End *************************
+		//	******************* Key Scheduling *********************
+				// <<61 ==(rot)== >>19	
+		temp_0 = key[0];
+		temp_1 = key[1];
+
+		key[0] = key[1] >> 3;
+		key[0] |= decBox3[key[2] & 0x07];
+
+		key[1] = key[2] >> 3;
+		key[1] |= decBox3[key[3] & 0x07];
+
+		key[2] = key[3] >> 3;
+		key[2] |= decBox3[key[4] & 0x07];
+
+		key[3] = key[4] >> 3;
+		key[3] |= decBox3[temp_0 & 0x07];
+
+		key[4] = temp_0 >> 3;
+		key[4] |= decBox3[temp_1 & 0x07];
+
+		//sBox
+		temp = key[4] >> 12;
+		key[4] &= 0x0FFF;
+		key[4] |= sBox4[temp] << 12;
+
+		//Permutation
+		if (round & 0x01)key[0] ^= 0x8000;
+		key[1] ^= (round >> 1);
+		//	******************* Key Scheduling End*********************
+	}
+	//	****************** addRoundkey *************************
+	state[0] ^= key[1];
+
+	//	****************** addRoundkey End *********************
+	return;
+}
+
+
+void Decrypt(u16* state, u16* aKey)
+{
+	// counter
+	u16 round;
+	// Variables Key Scheduling
+	u16 subkey[31][4];
+	u16 key[5];
+	u16 temp;
+	// Variables pLayer
+	u16 j;
+	u16 temp_0;
+	u16 temp_1;
+	u16 temp_2;
+	u16 temp_3;
+	s16 position;
+
+	key[4] = aKey[4];
+	key[3] = aKey[3];
+	key[2] = aKey[2];
+	key[1] = aKey[1];
+	key[0] = aKey[0];
+
+	//	****************** Key Scheduling **********************
+	for (round = 1; round < 32; round++)
+	{
+		// <<61 ==(rot)== >>19	
+		temp_0 = key[0];
+		temp_1 = key[1];
+
+		key[0] = key[1] >> 3;
+		key[0] |= decBox3[key[2] & 0x07];
+
+		key[1] = key[2] >> 3;
+		key[1] |= decBox3[key[3] & 0x07];
+
+		key[2] = key[3] >> 3;
+		key[2] |= decBox3[key[4] & 0x07];
+
+		key[3] = key[4] >> 3;
+		key[3] |= decBox3[temp_0 & 0x07];
+
+		key[4] = temp_0 >> 3;
+		key[4] |= decBox3[temp_1 & 0x07];
+
+		//sBox
+		temp = key[4] >> 12;
+		key[4] &= 0x0FFF;
+		key[4] |= sBox4[temp] << 12;
+
+		//Permutation
+		if (round & 0x01)key[0] ^= 0x8000;
+		key[1] ^= (round >> 1);
+
+		subkey[round - 1][3] = key[4];
+		subkey[round - 1][2] = key[3];
+		subkey[round - 1][1] = key[2];
+		subkey[round - 1][0] = key[1];
+	}
+
+	//	****************** Key Scheduling End ******************
+
+	for (round = ROUND_MAX_SIZE - 1; round > 0; round--)
+	{
+		//	****************** addRoundkey *************************
+		state[0] ^= subkey[round - 1][0];
+		//	****************** addRoundkey End *********************
+		//	******************* pLayer *****************************
+		int x = state[0];
+		int r = 0;
+		for (int i = 0; i < MAX_bit; ++i) {
+			if (i == (MAX_bit - 1)) {
+				r ^= (x >> ((MAX_bit - 1) - i)) & 1;
+			}
+			else {
+				int pos = 4 * i % (MAX_bit - 1);
+				r ^= ((x >> ((MAX_bit - 1) - i)) & 1) << ((MAX_bit - 1) - pos);
+			}
+		}
+		//	******************* pLayer End *************************
+		//	******************* sBox *******************************
+		int v = r;
+		int u = 0;
+		x = 0;
+		for (int i = 0; i < MAX_bit; ++i) {
+			u |= (v & 1) << (i % 4);
+			v >>= 1;
+
+			if ((i + 1) % 4 == 0) {
+				x |= invsBox4[u] << (i + 1 - 4);
+				u = 0;
+			}
+		}
+		state[0] = x;
+		//	******************* sBox End ***************************
+	}
+	//	****************** addRoundkey *************************
+	state[0] ^= aKey[1];
+
+	//	****************** addRoundkey End *********************
+}
+
+
+
+int main(void)
+{
+	// Input values
+		//u16 key[5]={0x780,0x0890,0xa120,0x0140,0x0000};
+		//u16 state[4]={0x8700,0x0104,0x4567,0xffff};
+	u16 key[5] = { 0,0,0,0,0 };
+	u16 state[1] = { 0x0000 };
+
+	ps(state);
+
+	Encrypt(state, key);
+
+	ps(state);
+
+	Decrypt(state, key);
+
+	ps(state);
+
+	return 0;
+}
