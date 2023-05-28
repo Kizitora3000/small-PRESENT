@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 
-#define ROUND_MAX_SIZE 32
-#define N 4 // N <= 4 
+#define ROUND_MAX_SIZE 2
+#define N 2 // N <= 4 
 #define MAX_bit 4 * N
 
 // s-box
@@ -16,11 +17,54 @@ typedef int16_t s16;
 
 void ps(u16* state)
 {
-	printf("%x ", state[3]);
-	printf("%x ", state[2]);
-	printf("%x ", state[1]);
-	printf("%x\n\n", state[0]);
+	printf("%x\n", state[0]);
 	return;
+}
+
+// encryption version if operation = 0 
+// decrypt    version if operation = 1
+u16 SboxConversion(u16 in, int operation) {
+	// exit when operation is neither 0 nor 1
+	if(operation != 0 && operation != 1) exit(-1);
+
+	u16 out = 0;
+	int bit_tank = 0;
+	for (int bit = 0; bit < MAX_bit; ++bit) {
+			// get the bit of "in" from LSB
+			bit_tank |= (in & 1) << (bit % 4);
+			in >>= 1;
+
+			// use s-box if bit_tank is 4 bits
+			if ((bit + 1) % 4 == 0) {
+				if(operation == 0) out |= sBox4[bit_tank] << (bit + 1 - 4);
+				if(operation == 1) out |= invsBox4[bit_tank] << (bit + 1 - 4);
+				bit_tank = 0;
+			}
+		}
+	return out;
+}
+
+// encryption version if operation = 0 
+// decrypt    version if operation = 1
+u16 pLayerConversion(u16 in, int operation) {
+	// exit when operation is neither 0 nor 1
+	if(operation != 0 && operation != 1) exit(-1);
+
+	u16 out = 0;
+
+	for (int i = 0; i < MAX_bit; ++i) {
+		if (i == MAX_bit - 1) {
+			out ^= (in >> ((MAX_bit - 1) - i)) & 1;
+		}
+		else {
+			// calculation of position depends on whether operation is encrypt or decrypt
+			int pLayer_value = (operation == 0) ?  N : 4;
+			int position = pLayer_value * i % (MAX_bit - 1);
+
+			out ^= ((in >> ((MAX_bit - 1) - i)) & 1) << ((MAX_bit - 1) - position);
+		}
+	}
+	return out;
 }
 
 void Encrypt(u16* state, u16* aKey)
@@ -46,39 +90,18 @@ void Encrypt(u16* state, u16* aKey)
 	key[2] = aKey[2];
 	key[1] = aKey[1];
 	key[0] = aKey[0];
+
 	for (round = 1; round < ROUND_MAX_SIZE; round++)
 	{
-		//	****************** addRoundkey *************************
+		//	addRoundkey
 		state[0] ^= key[1];
-		//	****************** addRoundkey End *********************
-		//	******************* sBox *******************************
-		int u = 0;
-		int x = 0;
-		int v = state[0];
-		for (int i = 0; i < MAX_bit; ++i) {
-			u |= (v & 1) << (i % 4);
-			v >>= 1;
 
-			if ((i + 1) % 4 == 0) {
-				x |= sBox4[u] << (i + 1 - 4);
-				u = 0;
-			}
-		}
-		//	******************* sBox End ***************************
-		//	******************* pLayer *****************************
-		int r = 0;
-		for (int i = 0; i < MAX_bit; ++i) {
-			if (i == MAX_bit - 1) {
-				r ^= (x >> ((MAX_bit - 1) - i)) & 1;
-			}
-			else {
-				int pos = N * i % (MAX_bit - 1);
-				r ^= ((x >> ((MAX_bit - 1) - i)) & 1) << ((MAX_bit - 1) - pos);
-			}
-		}
-		state[0] = r;
-		//	******************* pLayer End *************************
-		//	******************* Key Scheduling *********************
+		// sBox
+		state[0] = SboxConversion(state[0], 0);
+		
+		// pLayer
+		state[0] = pLayerConversion(state[0], 0);
+		//	-------------------* Key Scheduling -------------------***
 				// <<61 ==(rot)== >>19	
 		temp_0 = key[0];
 		temp_1 = key[1];
@@ -106,12 +129,12 @@ void Encrypt(u16* state, u16* aKey)
 		//Permutation
 		if (round & 0x01)key[0] ^= 0x8000;
 		key[1] ^= (round >> 1);
-		//	******************* Key Scheduling End*********************
+		//	-------------------* Key Scheduling End-------------------***
 	}
-	//	****************** addRoundkey *************************
+	//	------------------- addRoundkey -------------------*******
 	state[0] ^= key[1];
 
-	//	****************** addRoundkey End *********************
+	//	------------------- addRoundkey End -------------------***
 	return;
 }
 
@@ -138,7 +161,7 @@ void Decrypt(u16* state, u16* aKey)
 	key[1] = aKey[1];
 	key[0] = aKey[0];
 
-	//	****************** Key Scheduling **********************
+	//	------------------- Key Scheduling -------------------
 	for (round = 1; round < 32; round++)
 	{
 		// <<61 ==(rot)== >>19	
@@ -175,57 +198,31 @@ void Decrypt(u16* state, u16* aKey)
 		subkey[round - 1][0] = key[1];
 	}
 
-	//	****************** Key Scheduling End ******************
+	//	------------------- Key Scheduling End -------------------
 
 	for (round = ROUND_MAX_SIZE - 1; round > 0; round--)
 	{
-		//	****************** addRoundkey *************************
+		//	addRoundkey
 		state[0] ^= subkey[round - 1][0];
-		//	****************** addRoundkey End *********************
-		//	******************* pLayer *****************************
-		int x = state[0];
-		int r = 0;
-		for (int i = 0; i < MAX_bit; ++i) {
-			if (i == (MAX_bit - 1)) {
-				r ^= (x >> ((MAX_bit - 1) - i)) & 1;
-			}
-			else {
-				int pos = 4 * i % (MAX_bit - 1);
-				r ^= ((x >> ((MAX_bit - 1) - i)) & 1) << ((MAX_bit - 1) - pos);
-			}
-		}
-		//	******************* pLayer End *************************
-		//	******************* sBox *******************************
-		int v = r;
-		int u = 0;
-		x = 0;
-		for (int i = 0; i < MAX_bit; ++i) {
-			u |= (v & 1) << (i % 4);
-			v >>= 1;
+		
+		//	pLayer
+		state[0] = pLayerConversion(state[0], 1);
 
-			if ((i + 1) % 4 == 0) {
-				x |= invsBox4[u] << (i + 1 - 4);
-				u = 0;
-			}
-		}
-		state[0] = x;
-		//	******************* sBox End ***************************
+		//	sBox
+		state[0] = SboxConversion(state[0], 1);
 	}
-	//	****************** addRoundkey *************************
+	//	------------------- addRoundkey -------------------
 	state[0] ^= aKey[1];
 
-	//	****************** addRoundkey End *********************
+	//	------------------- addRoundkey End -------------------
 }
 
 
 
 int main(void)
 {
-	// Input values
-		//u16 key[5]={0x780,0x0890,0xa120,0x0140,0x0000};
-		//u16 state[4]={0x8700,0x0104,0x4567,0xffff};
 	u16 key[5] = { 0,0,0,0,0 };
-	u16 state[1] = { 0x0000 };
+	u16 state[1] = { 0x00 };
 
 	ps(state);
 
