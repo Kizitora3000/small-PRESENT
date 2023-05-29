@@ -207,6 +207,15 @@ void Decrypt(u16* state, u16* aKey) {
 }
 
 
+u16 PRESENT_16_wrapper_for_python(u16 plaintext) {
+	u16 key[5] = { 0,0,0,0,0 };
+    u16 state[1];
+    state[0] = plaintext;
+    Encrypt(state, key);
+
+    return state[0];
+}
+
 
 int main(void)
 {
