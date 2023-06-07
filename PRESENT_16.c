@@ -221,6 +221,14 @@ u16 EncryptWrapper(u16* key, u16 plaintext) {
     return state[0];
 }
 
+u16 DecryptWrapper(u16* key, u16 chipertext) {
+	u16 secret_key[5] = { key[0], key[1], key[2], key[3], key[4]};
+    u16 state[1];
+    state[0] = chipertext;
+    Decrypt(state, secret_key);
+
+    return state[0];
+}
 
 int main(void)
 {
