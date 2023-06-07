@@ -212,11 +212,11 @@ void Decrypt(u16* state, u16* aKey) {
 }
 
 
-u16 PRESENT_16_wrapper_for_python(u16 plaintext) {
-	u16 key[5] = { 0,0,0,0,0 };
+u16 EncryptWrapper(u16* key, u16 plaintext) {
+	u16 secret_key[5] = { key[0], key[1], key[2], key[3], key[4]};
     u16 state[1];
     state[0] = plaintext;
-    Encrypt(state, key);
+    Encrypt(state, secret_key);
 
     return state[0];
 }
