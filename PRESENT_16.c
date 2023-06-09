@@ -2,15 +2,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define ROUND_MAX_SIZE 2
 #define N 4 // N <= 4 
 #define MAX_bit 4 * N
-
-// s-box
-const unsigned short sBox4[] = { 0xc,0x5,0x6,0xb,0x9,0x0,0xa,0xd,0x3,0xe,0xf,0x8,0x4,0x7,0x1,0x2 };
-const unsigned short decBox3[] = { 0x0000,0x2000,0x4000,0x6000,0x8000,0xa000,0xc000,0xe000 };
-const unsigned short invsBox4[] = { 0x5,0xe,0xf,0x8,0xC,0x1,0x2,0xD,0xB,0x4,0x6,0x3,0x0,0x7,0x9,0xA };
-
 
 typedef uint16_t u16;
 typedef int16_t s16;
@@ -23,6 +16,9 @@ void ps(u16* state) {
 // encryption version if operation = 0 
 // decrypt    version if operation = 1
 u16 SboxConversion(u16 in, int operation) {
+	const unsigned short sBox4[] = { 0xc,0x5,0x6,0xb,0x9,0x0,0xa,0xd,0x3,0xe,0xf,0x8,0x4,0x7,0x1,0x2 };
+	const unsigned short invsBox4[] = { 0x5,0xe,0xf,0x8,0xC,0x1,0x2,0xD,0xB,0x4,0x6,0x3,0x0,0x7,0x9,0xA };
+
 	// exit when operation is neither 0 nor 1
 	if(operation != 0 && operation != 1) exit(-1);
 
@@ -46,6 +42,9 @@ u16 SboxConversion(u16 in, int operation) {
 // encryption version if operation = 0 
 // decrypt    version if operation = 1
 u16 pLayerConversion(u16 in, int operation) {
+	const unsigned short sBox4[] = { 0xc,0x5,0x6,0xb,0x9,0x0,0xa,0xd,0x3,0xe,0xf,0x8,0x4,0x7,0x1,0x2 };
+	const unsigned short invsBox4[] = { 0x5,0xe,0xf,0x8,0xC,0x1,0x2,0xD,0xB,0x4,0x6,0x3,0x0,0x7,0x9,0xA };
+
 	// exit when operation is neither 0 nor 1
 	if(operation != 0 && operation != 1) exit(-1);
 
@@ -66,7 +65,10 @@ u16 pLayerConversion(u16 in, int operation) {
 	return out;
 }
 
-void Encrypt(u16* state, u16* aKey) {
+void Encrypt(u16* state, u16* aKey, int max_round) {
+	const unsigned short sBox4[] = { 0xc,0x5,0x6,0xb,0x9,0x0,0xa,0xd,0x3,0xe,0xf,0x8,0x4,0x7,0x1,0x2 };
+	const unsigned short decBox3[] = { 0x0000,0x2000,0x4000,0x6000,0x8000,0xa000,0xc000,0xe000 };
+    int ROUND_MAX_SIZE = max_round;
 
 	// counter
 	u16 round = 1;
@@ -135,7 +137,10 @@ void Encrypt(u16* state, u16* aKey) {
 }
 
 
-void Decrypt(u16* state, u16* aKey) {
+void Decrypt(u16* state, u16* aKey, int max_round) {
+	const unsigned short sBox4[] = { 0xc,0x5,0x6,0xb,0x9,0x0,0xa,0xd,0x3,0xe,0xf,0x8,0x4,0x7,0x1,0x2 };
+	const unsigned short decBox3[] = { 0x0000,0x2000,0x4000,0x6000,0x8000,0xa000,0xc000,0xe000 };
+    int ROUND_MAX_SIZE = max_round;
 	// counter
 	u16 round;
 	// Variables Key Scheduling
@@ -207,6 +212,25 @@ void Decrypt(u16* state, u16* aKey) {
 }
 
 
+u16 EncryptWrapper(u16* key, u16 plaintext, int max_round) {
+    int ROUND_MAX_SIZE = max_round;
+	u16 secret_key[5] = { key[0], key[1], key[2], key[3], key[4]};
+    u16 state[1];
+    state[0] = plaintext;
+    Encrypt(state, secret_key, ROUND_MAX_SIZE);
+
+    return state[0];
+}
+
+u16 DecryptWrapper(u16* key, u16 chipertext, int max_round) {
+    int ROUND_MAX_SIZE = max_round;
+	u16 secret_key[5] = { key[0], key[1], key[2], key[3], key[4]};
+    u16 state[1];
+    state[0] = chipertext;
+    Decrypt(state, secret_key, ROUND_MAX_SIZE);
+
+    return state[0];
+}
 
 int main(void)
 {
@@ -215,11 +239,11 @@ int main(void)
 
 	ps(state);
 
-	Encrypt(state, key);
+	Encrypt(state, key, 2);
 
 	ps(state);
 
-	Decrypt(state, key);
+	Decrypt(state, key, 2);
 
 	ps(state);
 
