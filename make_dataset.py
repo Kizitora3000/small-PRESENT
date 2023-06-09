@@ -4,9 +4,9 @@ import ctypes
 
 PRESENT_16 = ctypes.CDLL('./PRESENT_16.so')
 
-PRESENT_16.EncryptWrapper.argtypes = [ctypes.POINTER(ctypes.c_int), ctypes.c_int]
+PRESENT_16.EncryptWrapper.argtypes = [ctypes.POINTER(ctypes.c_int), ctypes.c_int, ctypes.c_int]
 PRESENT_16.EncryptWrapper.restype = ctypes.c_int
-PRESENT_16.DecryptWrapper.argtypes = [ctypes.POINTER(ctypes.c_int), ctypes.c_int]
+PRESENT_16.DecryptWrapper.argtypes = [ctypes.POINTER(ctypes.c_int), ctypes.c_int, ctypes.c_int]
 PRESENT_16.DecryptWrapper.restype = ctypes.c_int
 
 """ 
