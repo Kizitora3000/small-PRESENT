@@ -12,8 +12,8 @@ PRESENT_16.DecryptWrapper.restype = ctypes.c_int
 """ 
 wrapper example
 
-ciphertext  = PRESENT_16.EncryptWrapper(secret_key, plaintext)
-decrypttext = PRESENT_16.DecryptWrapper(secret_key, ciphertext)
+ciphertext  = PRESENT_16.EncryptWrapper(secret_key, plaintext, MAX_ROUND_NUM)
+decrypttext = PRESENT_16.DecryptWrapper(secret_key, ciphertext, MAX_ROUND_NUM)
 """
 
 """
@@ -23,14 +23,15 @@ CP: Ciphertext Prediction
 PR: Plaintext Recovery
 """
 
+MAX_ROUND_NUM = 2
 
 secret_key = (ctypes.c_int * 5)(0x0000, 0x0000, 0x0000, 0x0000, 0x0000)
 
 x_CP_dataset = []
 y_CP_dataset = []
 
-for plaintext in range(2**8):
-    ciphertext = PRESENT_16.EncryptWrapper(secret_key, plaintext)
+for plaintext in range(2**16):
+    ciphertext = PRESENT_16.EncryptWrapper(secret_key, plaintext, MAX_ROUND_NUM)
 
     x_CP_dataset.append(plaintext)
     y_CP_dataset.append(ciphertext)
