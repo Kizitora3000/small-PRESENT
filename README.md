@@ -1,7 +1,7 @@
 # small-PRESENT
 For special research
 
-## What this?
+## What is this?
 
 small-PRESENT-[n] is proposed by [1] and is the smaller version of PRESENT proposed by [2]. 
 
