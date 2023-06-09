@@ -13,6 +13,7 @@ small-PRESENT-[n] is proposed by [1] and is the smaller version of PRESENT propo
 2. cd small-PRESENT
 3. make
 4. python make_dataset.py
+5. ls output
 
 ## Reference
 
