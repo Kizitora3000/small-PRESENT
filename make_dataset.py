@@ -12,8 +12,8 @@ PRESENT_16.DecryptWrapper.restype = ctypes.c_int
 """ 
 wrapper example
 
-ciphertext  = PRESENT_16.EncryptWrapper(secret_key, plaintext, MAX_ROUND_NUM)
-decrypttext = PRESENT_16.DecryptWrapper(secret_key, ciphertext, MAX_ROUND_NUM)
+ciphertext  = PRESENT_16.EncryptWrapper(secret_key, plaintext)
+decrypttext = PRESENT_16.DecryptWrapper(secret_key, ciphertext)
 """
 
 """
@@ -23,16 +23,15 @@ CP: Ciphertext Prediction
 PR: Plaintext Recovery
 """
 
-# Note that MAX_ROUND_NUM - 1 is the number of rounds actually applied. So if MAX_ROUND_NUM = 1, the number of rounds to be applied is 0, so it remains the same; if MAX_ROUND_NUM = 32, the number of rounds is applied for 31.
-MAX_ROUND_NUM = 2
 
-secret_key = (ctypes.c_int * 5)(0x0000, 0x0000, 0x0000, 0x0000, 0x0000)
+#secret_key = (ctypes.c_int * 5)(0x0000, 0x0000, 0x0000, 0x0000, 0x0000)
+secret_key = (ctypes.c_int * 5)(0x1234, 0x4567, 0x89ab, 0xcdef, 0x1234)
 
 x_CP_dataset = []
 y_CP_dataset = []
 
 for plaintext in range(2**16):
-    ciphertext = PRESENT_16.EncryptWrapper(secret_key, plaintext, MAX_ROUND_NUM)
+    ciphertext = PRESENT_16.EncryptWrapper(secret_key, plaintext, 2)
 
     x_CP_dataset.append(plaintext)
     y_CP_dataset.append(ciphertext)
