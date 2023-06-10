@@ -23,7 +23,7 @@ CP: Ciphertext Prediction
 PR: Plaintext Recovery
 """
 
-# MAX_ROUND_NUM - 1 が実際に適用されるラウンド数であることに注意。そのためMAX_ROUND_NUM = 1 とすると、適用されるラウンド数は0個なので、そのまま。MAX_ROUND_NUM = 32 とするとラウンド数が31個分適用される
+# Note that MAX_ROUND_NUM - 1 is the number of rounds actually applied. So if MAX_ROUND_NUM = 1, the number of rounds to be applied is 0, so it remains the same; if MAX_ROUND_NUM = 32, the number of rounds is applied for 31.
 MAX_ROUND_NUM = 2
 
 secret_key = (ctypes.c_int * 5)(0x0000, 0x0000, 0x0000, 0x0000, 0x0000)
