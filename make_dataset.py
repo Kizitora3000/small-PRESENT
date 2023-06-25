@@ -4,16 +4,16 @@ import ctypes
 
 PRESENT_16 = ctypes.CDLL('./PRESENT_16.so')
 
-PRESENT_16.EncryptWrapper.argtypes = [ctypes.POINTER(ctypes.c_int), ctypes.c_int, ctypes.c_int]
+PRESENT_16.EncryptWrapper.argtypes = [ctypes.POINTER(ctypes.c_int), ctypes.c_int]
 PRESENT_16.EncryptWrapper.restype = ctypes.c_int
-PRESENT_16.DecryptWrapper.argtypes = [ctypes.POINTER(ctypes.c_int), ctypes.c_int, ctypes.c_int]
+PRESENT_16.DecryptWrapper.argtypes = [ctypes.POINTER(ctypes.c_int), ctypes.c_int]
 PRESENT_16.DecryptWrapper.restype = ctypes.c_int
 
 """ 
 wrapper example
 
-ciphertext  = PRESENT_16.EncryptWrapper(secret_key, plaintext)
-decrypttext = PRESENT_16.DecryptWrapper(secret_key, ciphertext)
+ciphertext  = PRESENT_16.EncryptWrapper(secret_key, plaintext, MAX_ROUND_NUM)
+decrypttext = PRESENT_16.DecryptWrapper(secret_key, ciphertext, MAX_ROUND_NUM)
 """
 
 """
@@ -23,15 +23,15 @@ CP: Ciphertext Prediction
 PR: Plaintext Recovery
 """
 
+MAX_ROUND_NUM = 2
 
-#secret_key = (ctypes.c_int * 5)(0x0000, 0x0000, 0x0000, 0x0000, 0x0000)
-secret_key = (ctypes.c_int * 5)(0x1234, 0x4567, 0x89ab, 0xcdef, 0x1234)
+secret_key = (ctypes.c_int * 5)(0x0000, 0x0000, 0x0000, 0x0000, 0x0000)
 
 x_CP_dataset = []
 y_CP_dataset = []
 
 for plaintext in range(2**16):
-    ciphertext = PRESENT_16.EncryptWrapper(secret_key, plaintext, 2)
+    ciphertext = PRESENT_16.EncryptWrapper(secret_key, plaintext, MAX_ROUND_NUM)
 
     x_CP_dataset.append(plaintext)
     y_CP_dataset.append(ciphertext)
